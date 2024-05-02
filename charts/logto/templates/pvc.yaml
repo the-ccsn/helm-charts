@@ -1,6 +1,5 @@
 {{- if .Values.persistence.enabled }}
 {{- range .Values.persistence.claims }}
-{{- if .persistentVolumeClaim }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -15,7 +14,6 @@ spec:
   storageClassName: {{ $.Values.persistence.storageClass }}
   selector:
     {{- include "logto.selectorLabels" $ | nindent 4 }}
-{{- end }}
 {{- end }}
 ---
 {{- end }}
