@@ -3,6 +3,21 @@ entries:
   logto:
   - apiVersion: v2
     appVersion: 1.15.0
+    created: "2024-05-02T20:05:08.104290808Z"
+    dependencies:
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: ~15.2.8
+    description: Logto, the better identity infrastructure for developers
+    digest: 9bd16615a917cc9cc79776f64941cfb853ca29b4494df7347197e6e51bfb12df
+    name: logto
+    type: application
+    urls:
+    - https://github.com/the-ccsn/helm-charts/releases/download/logto-0.1.2/logto-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.15.0
     created: "2024-05-02T19:41:57.046443728Z"
     dependencies:
     - condition: postgresql.enabled
@@ -31,4 +46,4 @@ entries:
     urls:
     - https://github.com/the-ccsn/helm-charts/releases/download/logto-0.1.0/logto-0.1.0.tgz
     version: 0.1.0
-generated: "2024-05-02T19:41:57.046453656Z"
+generated: "2024-05-02T20:05:08.104303271Z"
