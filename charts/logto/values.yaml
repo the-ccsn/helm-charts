@@ -1,0 +1,180 @@
+# Default values for logto.
+
+replicaCount: 1
+
+image:
+  registry: ghcr.io
+  repository: logto-io/logto
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+services:
+  admin:
+    type: LoadBalancer
+    name: admin
+    port: 3002
+  core:
+    type: LoadBalancer
+    name: core
+    port: 3001
+
+emmbedded_tls:
+  enabled: false
+  secretName: logto-tls
+  certName: tls.crt
+  keyName: tls.key
+
+# Refer to https://docs.logto.io/docs/recipes/deployment/
+coreEndpoint: ""
+adminEndpoint: ""
+
+# Database uri for logto, if postgresql is enabled, this will be ignored
+dbUrl: ""
+trustProxyHeader: "1"
+
+# -- Configuration values for the postgresql dependency.
+# ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+# @default -- see `values.yaml`
+postgresql:
+  ##
+  ## Use the PostgreSQL chart dependency.
+  ## Set to false if bringing your own PostgreSQL.
+  enabled: true
+
+  ## Authentication parameters
+  auth:
+    ## The name of an existing secret that contains the postgres password.
+    existingSecret:
+    ## PostgreSQL name for a custom user to create
+    username: logto
+    ## PostgreSQL password for the custom user to create. Ignored if `auth.existingSecret` with key `password` is provided
+    password:
+    ## PostgreSQL name for a custom database to create
+    database: logto
+
+  ## PostgreSQL Primary parameters
+  primary:
+    ##
+    ## Persistent Volume Storage configuration.
+    ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+    persistence:
+      ##
+      ## Enable PostgreSQL persistence using Persistent Volume Claims.
+      enabled: true
+      ##
+      ## Persistent class
+      # storageClass: classname
+      ##
+      ## Access modes:
+      accessModes:
+        - ReadWriteOnce
+    ## PostgreSQL port
+    service:
+      ports:
+        postgresql: 5432
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: admin.logto.local
+      paths:
+        - path: /
+          pathType: Prefix
+          svcName: admin
+    - host: logto.local
+      paths:
+        - path: /
+          pathType: Prefix
+          svcName: core
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+persistence:
+  # Whether to automatically create the PersistentVolumeClaims exists in the volumes
+  enabled: true
+  storageClass: ""
+  claims:
+  - name: connectors-claim
+    accessModes: [ "ReadWriteOnce" ]
+    resources:
+      requests:
+        storage: 15Mi
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /api/status
+    port: core
+readinessProbe:
+  httpGet:
+    path: /api/status
+    port: core
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+# Additional volumes on the output Deployment definition.
+volumes:
+- name: connectors
+  persistentVolumeClaim:
+    claimName: connectors-claim
+
+# Additional volumeMounts on the output Deployment definition.
+volumeMounts:
+- name: connectors
+  mountPath: /etc/logto/packages/core/connectors
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

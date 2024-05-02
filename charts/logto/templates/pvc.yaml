@@ -1,0 +1,21 @@
+{{- if .Values.persistence.enabled }}
+{{- range .Values.persistence.claims }}
+{{- if .persistentVolumeClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "logto.labels" $ | nindent 4 }}
+spec:
+  accessModes:
+    {{- toYaml .accessModes | nindent 4 }}
+  resources:
+    {{- toYaml .resources | nindent 4 }}
+  storageClassName: {{ $.Values.persistence.storageClass }}
+  selector:
+    {{- include "logto.selectorLabels" $ | nindent 4 }}
+{{- end }}
+{{- end }}
+---
+{{- end }}

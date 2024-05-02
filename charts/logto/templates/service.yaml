@@ -1,0 +1,18 @@
+{{- range .Values.services }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "logto.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "logto.labels" $ | nindent 4 }}
+spec:
+  type: {{ .type }}
+  ports:
+    - port: {{ .port }}
+      targetPort: {{ .name }}
+      protocol: TCP
+      name: {{ .name }}
+  selector:
+    {{- include "logto.selectorLabels" $ | nindent 4 }}
+---
+{{- end }}
