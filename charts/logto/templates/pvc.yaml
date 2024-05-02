@@ -12,8 +12,6 @@ spec:
   resources:
     {{- toYaml .resources | nindent 4 }}
   storageClassName: {{ $.Values.persistence.storageClass }}
-  selector:
-    {{- include "logto.selectorLabels" $ | nindent 4 }}
 {{- end }}
 ---
 {{- end }}
