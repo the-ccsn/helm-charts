@@ -5,8 +5,10 @@ metadata:
   labels:
     {{- include "logto.labels" . | nindent 4 }}
 data:
-  # ENDPOINT: {{ .Values.coreEndpoint | quote }}
-  # ADMIN_ENDPOINT: {{ .Values.adminEndpoint | quote }}
+  # Core and Admin endpoints for OIDC and Admin Console
+  ENDPOINT: {{ .Values.coreEndpoint | quote }}
+  ADMIN_ENDPOINT: {{ .Values.adminEndpoint | quote }}
+  # Additional envs can be added here as needed
   {{- if .Values.emmbedded_tls.enabled }}
   HTTPS_CERT_PATH: "/etc/logto/tls/{{ .Values.tls.certName }}"
   HTTPS_KEY_PATH: "/etc/logto/tls/{{ .Values.tls.keyName }}"

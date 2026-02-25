@@ -1,8 +1,16 @@
 {{- if .Values.ingress.enabled -}}
 {{- $fullName := include "logto.fullname" . -}}
-{{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
-  {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
-  {{- $_ := set .Values.ingress.annotations "kubernetes.io/ingress.class" .Values.ingress.className}}
+{{- $className := .Values.ingress.className }}
+{{- $annotations := .Values.ingress.annotations }}
+
+
+{{- $services := include "logto.serviceDict" . | fromYaml -}}
+{{- range $key, $svc := $services }}
+{{- $ingress := (ternary .Values.console.ingress .Values.ingress (eq $key "admin")) -}}
+{{- if $ingress.enabled }}
+{{- if and $ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey $ingress.annotations "kubernetes.io/ingress.class") }}
+  {{- $_ := set $ingress.annotations "kubernetes.io/ingress.class" $ingress.className}}
   {{- end }}
 {{- end }}
 {{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
@@ -14,20 +22,20 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ include (printf "logto.%sServiceName" $key | lower | title) . }}
   labels:
     {{- include "logto.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+  {{- with $ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
-  ingressClassName: {{ .Values.ingress.className }}
+  {{- if and $ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  ingressClassName: {{ $ingress.className }}
   {{- end }}
-  {{- if .Values.ingress.tls }}
+  {{- if $ingress.tls }}
   tls:
-    {{- range .Values.ingress.tls }}
+    {{- range $ingress.tls }}
     - hosts:
         {{- range .hosts }}
         - {{ . | quote }}
@@ -36,13 +44,11 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
+    {{- range $ingress.hosts }}
     - host: {{ .host | quote }}
       http:
         paths:
           {{- range .paths }}
-          {{- $svcName := .svcName -}}
-          {{- $svcPort := index .Values.services (index (index .Values.services 0).name .svcName).port | default 80 -}}
           - path: {{ .path }}
             {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
             pathType: {{ .pathType }}
@@ -50,13 +56,15 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $fullName }}-{{ $svcName }}
+                name: {{ include (printf "logto.%sServiceName" $key | lower | title) . }}
                 port:
-                  number: {{ $svcPort }}
+                  number: {{ include (printf "logto.%sServicePort" $key | lower | title) . }}
               {{- else }}
-              serviceName: {{ $fullName }}-{{ $svcName }}
-              servicePort: {{ $svcPort }}
+              serviceName: {{ include (printf "logto.%sServiceName" $key | lower | title) . }}
+              servicePort: {{ include (printf "logto.%sServicePort" $key | lower | title) . }}
               {{- end }}
           {{- end }}
     {{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

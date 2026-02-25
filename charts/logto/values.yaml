@@ -38,15 +38,10 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
-services:
-  admin:
-    type: ClusterIP
-    name: admin
-    port: 3002
-  core:
-    type: ClusterIP
-    name: core
-    port: 3001
+service:
+  type: ClusterIP
+  name: core
+  port: 3001
 
 emmbedded_tls:
   enabled: false
@@ -104,57 +99,81 @@ postgresql:
         postgresql: 5432
 
 ingress:
+  # Ingress for core (main service, root domain)
   enabled: false
   className: ""
   annotations: {}
-  hosts:
-    - host: admin.logto.local
-      paths:
-        - path: /
-          pathType: Prefix
-          svcName: admin
-    - host: logto.local
-      paths:
-        - path: /
-          pathType: Prefix
-          svcName: core
+  # hosts: User must provide their own hostnames. Example below:
+  hosts: []
+  #   - host: your.domain.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  # Note: The backend service reference in the ingress will be automatically set.
   tls: []
   #  - secretName: chart-example-tls
   #    hosts:
-  #      - chart-example.local
+  #      - logto.local
 
-# HTTPRoute configuration for Gateway API
+## Console (admin UI) configuration
+# All settings for the admin console (previously admin) are nested under this field.
+console:
+  service:
+    type: ClusterIP
+    name: admin
+    port: 3002
+  # Ingress for console (admin UI, subdomain)
+  # This section configures the ingress for the admin console, typically on a subdomain.
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts: []
+    #   - host: admin.your-domain.com
+    #     paths:
+    #       - path: /
+    #         pathType: Prefix
+    # Note: The backend service reference in the ingress will be automatically set.
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - admin.logto.local
+  ## HTTPRoute configuration for Gateway API (admin)
+  # Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
+  httpRoute:
+    enabled: false
+    annotations: {}
+    labels: {}
+    parentRefs: []
+    hostnames: []
+    #   - admin.your-domain.com
+    # rules:
+    #   - matches:
+    #       - path:
+    #           type: PathPrefix
+    #           value: /
+    #     backendRefs:
+    #       - name: <release>-admin
+    #         port: 3002
+
+## HTTPRoute configuration for Gateway API (core)
 # Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
 httpRoute:
-  # -- Enable HTTPRoute resource for Gateway API
+  # HTTPRoute for core (main service, root domain)
   enabled: false
-  # -- Annotations for HTTPRoute resource
   annotations: {}
-  # -- Additional labels for HTTPRoute resource
   labels: {}
-  # -- Parent references (REQUIRED when enabled - HTTPRoute will not work without this)
-  # Example:
-  # parentRefs:
-  #   - name: my-gateway
-  #     namespace: gateway-namespace
   parentRefs: []
-  # -- Hostnames for the HTTPRoute
-  # Example:
-  # hostnames:
-  #   - headlamp.example.com
   hostnames: []
-  # -- Custom routing rules (optional, defaults to path prefix /)
-  # If not specified, a default rule routing all traffic to the service is used
-  rules: []
-  # Example custom rules:
+  #   - your.domain.com
   # rules:
   #   - matches:
   #       - path:
   #           type: PathPrefix
-  #           value: /headlamp
+  #           value: /
   #     backendRefs:
-  #       - name: "{{ .Release.Name }}-headlamp"
-  #         port: 80
+  #       - name: <release>-core
+  #         port: 3001
 persistence:
   # Whether to automatically create the PersistentVolumeClaims exists in the volumes
   enabled: true

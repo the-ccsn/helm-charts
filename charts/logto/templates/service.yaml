@@ -1,18 +1,21 @@
-{{- range .Values.services }}
+{{- $services := include "logto.serviceDict" . | fromYaml -}}
+{{- range $key, $svc := $services }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "logto.fullname" $ }}-{{ .name }}
+  name: {{ include (printf "logto.%sServiceName" $key | lower | title) $ }}
   labels:
     {{- include "logto.labels" $ | nindent 4 }}
 spec:
-  type: {{ .type }}
+  type: {{ $svc.type }}
   ports:
-    - port: {{ .port }}
-      targetPort: {{ .name }}
+    - port: {{ $svc.port }}
+      targetPort: {{ $svc.name }}
       protocol: TCP
-      name: {{ .name }}
+      name: {{ $svc.name }}
   selector:
     {{- include "logto.selectorLabels" $ | nindent 4 }}
+---
+{{- end }}
 ---
 {{- end }}

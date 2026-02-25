@@ -30,6 +30,7 @@ spec:
       serviceAccountName: {{ include "logto.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      # Init container to fetch official connectors
       initContainers:
         - name: {{ .Chart.Name }}-init
           securityContext:
@@ -72,10 +73,10 @@ spec:
           image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            {{- range .Values.services }}
-          - name: {{ .name }}
-            containerPort: {{ .port }}
-            {{- end }}
+            - name: core
+              containerPort: {{ .Values.service.port }}
+            - name: console
+              containerPort: {{ .Values.console.service.port }}
           env:
             {{- if .Values.postgresql.enabled }}
           - name: POSTGRES_PASSWORD
@@ -84,6 +85,14 @@ spec:
                 name: {{ include "postgresql.v1.secretName" .Subcharts.postgresql }}
                 key: password
             {{- end }}
+          - name: DB_URL
+            value: {{ .Values.dbUrl | quote }}
+          - name: ENDPOINT
+            value: {{ .Values.coreEndpoint | quote }}
+          - name: ADMIN_ENDPOINT
+            value: {{ .Values.adminEndpoint | quote }}
+          - name: TRUST_PROXY_HEADER
+            value: {{ .Values.trustProxyHeader | quote }}
           envFrom:
           - secretRef:
               name: {{ include "logto.secretName" . }}
