@@ -1,12 +1,6 @@
-{{- if .Values.ingress.enabled -}}
-{{- $fullName := include "logto.fullname" . -}}
-{{- $className := .Values.ingress.className }}
-{{- $annotations := .Values.ingress.annotations }}
-
-
 {{- $services := include "logto.serviceDict" . | fromYaml -}}
 {{- range $key, $svc := $services }}
-{{- $ingress := (ternary .Values.console.ingress .Values.ingress (eq $key "admin")) -}}
+{{- $ingress := (ternary $.Values.console.ingress $.Values.ingress (eq $key "admin")) -}}
 {{- if $ingress.enabled }}
 {{- if and $ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey $ingress.annotations "kubernetes.io/ingress.class") }}
@@ -22,7 +16,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ include (printf "logto.%sServiceName" $key | lower | title) . }}
+  name: {{ include (printf "logto.%sServiceName" $key) . }}
   labels:
     {{- include "logto.labels" . | nindent 4 }}
   {{- with $ingress.annotations }}
@@ -56,15 +50,14 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ include (printf "logto.%sServiceName" $key | lower | title) . }}
+                name: {{ include (printf "logto.%sServiceName" $key) . }}
                 port:
-                  number: {{ include (printf "logto.%sServicePort" $key | lower | title) . }}
+                  number: {{ include (printf "logto.%sServicePort" $key) . }}
               {{- else }}
-              serviceName: {{ include (printf "logto.%sServiceName" $key | lower | title) . }}
-              servicePort: {{ include (printf "logto.%sServicePort" $key | lower | title) . }}
+              serviceName: {{ include (printf "logto.%sServiceName" $key) . }}
+              servicePort: {{ include (printf "logto.%sServicePort" $key) . }}
               {{- end }}
           {{- end }}
     {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}

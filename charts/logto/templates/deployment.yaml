@@ -30,89 +30,26 @@ spec:
       serviceAccountName: {{ include "logto.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      # Init container to fetch official connectors
       initContainers:
         - name: {{ .Chart.Name }}-init
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- include "logto.commonContainerSpec" . | nindent 10 }}
           command:
             - /bin/sh
           args:
             - '-c'
             - 'npm run cli connector add -- --official'
-          env:
-            {{- if .Values.postgresql.enabled }}
-          - name: POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "postgresql.v1.secretName" .Subcharts.postgresql }}
-                key: password
-            {{- end }}
-          envFrom:
-          - secretRef:
-              name: {{ include "logto.secretName" . }}
-          - configMapRef:
-              name: {{ include "logto.configMapName" . }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-            {{- if .Values.emmbedded_tls.enabled }}
-          - name: emmbedded_tls
-            mountPath: /etc/logto/tls
-            readOnly: true
-            {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- include "logto.commonContainerSpec" . | nindent 10 }}
           ports:
             - name: core
               containerPort: {{ .Values.service.port }}
             - name: console
               containerPort: {{ .Values.console.service.port }}
-          env:
-            {{- if .Values.postgresql.enabled }}
-          - name: POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "postgresql.v1.secretName" .Subcharts.postgresql }}
-                key: password
-            {{- end }}
-          - name: DB_URL
-            value: {{ .Values.dbUrl | quote }}
-          - name: ENDPOINT
-            value: {{ .Values.coreEndpoint | quote }}
-          - name: ADMIN_ENDPOINT
-            value: {{ .Values.adminEndpoint | quote }}
-          - name: TRUST_PROXY_HEADER
-            value: {{ .Values.trustProxyHeader | quote }}
-          envFrom:
-          - secretRef:
-              name: {{ include "logto.secretName" . }}
-          - configMapRef:
-              name: {{ include "logto.configMapName" . }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-            {{- if .Values.emmbedded_tls.enabled }}
-          - name: emmbedded_tls
-            mountPath: /etc/logto/tls
-            readOnly: true
-            {{- end }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

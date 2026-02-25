@@ -49,79 +49,45 @@ emmbedded_tls:
   certName: tls.crt
   keyName: tls.key
 
-# Refer to https://docs.logto.io/docs/recipes/deployment/
-coreEndpoint: ""
-adminEndpoint: ""
+# The Postgres DSN for Logto database. Use valueFrom or value, both optional.
+dbUrl:
+  # valueFrom: 
+  #   secretKeyRef:
+  #     name: "your-secret"
+  #     key: "DB_URL"
+  # value: "postgresql://user:pass@host:5432/db"
+  {}
+# The endpoint for Logto core (OIDC issuer identifier, etc.)
+endpoint: ""
 
-# Database uri for logto, if postgresql is enabled, this will be ignored
-dbUrl: ""
-trustProxyHeader: "1"
-
-# -- Configuration values for the postgresql dependency.
-# ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
-# @default -- see `values.yaml`
-postgresql:
-  ##
-  ## Use the PostgreSQL chart dependency.
-  ## Set to false if bringing your own PostgreSQL.
-  enabled: true
-
-  ## Authentication parameters
-  auth:
-    ## The name of an existing secret that contains the postgres password.
-    existingSecret:
-    ## PostgreSQL name for a custom user to create
-    username: logto
-    ## PostgreSQL password for the custom user to create. Ignored if `auth.existingSecret` with key `password` is provided
-    password:
-    ## PostgreSQL name for a custom database to create
-    database: logto
-
-  ## PostgreSQL Primary parameters
-  primary:
-    ##
-    ## Persistent Volume Storage configuration.
-    ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
-    persistence:
-      ##
-      ## Enable PostgreSQL persistence using Persistent Volume Claims.
-      enabled: true
-      ##
-      ## Persistent class
-      # storageClass: classname
-      ##
-      ## Access modes:
-      accessModes:
-        - ReadWriteOnce
-    ## PostgreSQL port
-    service:
-      ports:
-        postgresql: 5432
-
-ingress:
-  # Ingress for core (main service, root domain)
-  enabled: false
-  className: ""
-  annotations: {}
-  # hosts: User must provide their own hostnames. Example below:
-  hosts: []
-  #   - host: your.domain.com
-  #     paths:
-  #       - path: /
-  #         pathType: Prefix
-  # Note: The backend service reference in the ingress will be automatically set.
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - logto.local
+# Refers to: https://docs.logto.io/concepts/core-service/configuration
+# What kind of environment that Logto runs in. ('production' | 'test' | undefined)
+# nodeEnv: ""
+# (v1.36.0+) PostgreSQL statement_timeout in milliseconds. Use a numeric string (e.g., 5000) or DISABLE_TIMEOUT to omit the startup parameter.
+# databaseStatementTimeout: ""
+# Path to HTTPS certificate file (see Enabling HTTPS for details)
+# httpsCertPath: ""
+# Path to HTTPS key file (see Enabling HTTPS for details)
+# httpsKeyPath: ""
+# Whether to trust proxy headers (true/false)
+# trustProxyHeader: ""
+# Specifies whether the username is case-sensitive. Exercise caution when modifying this value; changes will not automatically adjust existing database data, requiring manual management.
+# caseSensitiveUsername: ""
+# The Key Encryption Key (KEK) used to encrypt Data Encryption Keys (DEK) in the Secret Vault. Must be a base64-encoded string. AES-256 (32 bytes) is recommended.
+# secretVaultKek: ""
 
 ## Console (admin UI) configuration
 # All settings for the admin console (previously admin) are nested under this field.
 console:
+  # The endpoint for Logto Admin Console (affects Admin Console Redirect URIs)
+  endpoint: ""
+  # Set to true to disable the port for Admin Console. With endpoint unset, it'll completely disable the Admin Console.
+  # disableLocalhost: false
   service:
     type: ClusterIP
     name: admin
     port: 3002
+
   # Ingress for console (admin UI, subdomain)
   # This section configures the ingress for the admin console, typically on a subdomain.
   ingress:
@@ -138,6 +104,7 @@ console:
     #  - secretName: chart-example-tls
     #    hosts:
     #      - admin.logto.local
+
   ## HTTPRoute configuration for Gateway API (admin)
   # Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
   httpRoute:
@@ -155,6 +122,23 @@ console:
     #     backendRefs:
     #       - name: <release>-admin
     #         port: 3002
+
+ingress:
+  # Ingress for core (main service, root domain)
+  enabled: false
+  className: ""
+  annotations: {}
+  # hosts: User must provide their own hostnames. Example below:
+  hosts: []
+  #   - host: your.domain.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  # Note: The backend service reference in the ingress will be automatically set.
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - logto.local
 
 ## HTTPRoute configuration for Gateway API (core)
 # Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
@@ -174,6 +158,7 @@ httpRoute:
   #     backendRefs:
   #       - name: <release>-core
   #         port: 3001
+
 persistence:
   # Whether to automatically create the PersistentVolumeClaims exists in the volumes
   enabled: true
