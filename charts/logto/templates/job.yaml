@@ -6,7 +6,6 @@ spec:
   template:
     spec:
       restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
-      backoffLimit: 0 # Disable automatic retries to prevent potential data corruption. Handle retries manually if needed.
       containers:
       - name: {{ .Chart.Name }}-alteration
         {{- include "logto.commonContainerSpec" . | nindent 8 }}
@@ -15,6 +14,17 @@ spec:
         args:
           - '-c'
           - 'npm run alteration deploy latest'
+      {{- if .Values.volumes or .Values.embeddedTls.enabled }}
+      volumes:
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.embeddedTls.enabled }}
+        - name: embedded-tls
+          secret:
+            secretName: {{ .Values.embeddedTls.secret.name }}
+        {{- end }}
+      {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -27,3 +37,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  backoffLimit: 0 # Disable automatic retries to prevent potential data corruption. Handle retries manually if needed.

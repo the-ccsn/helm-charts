@@ -75,17 +75,6 @@ envFrom:
 {{- end }}
 resources:
   {{- toYaml .Values.resources | nindent 2 }}
-{{- if .Values.volumes or .Values.embeddedTls.enabled }}
-volumes:
-  {{- with .Values.volumes }}
-  {{- toYaml . | nindent 8 }}
-  {{- end }}
-  {{- if .Values.embeddedTls.enabled }}
-  - name: embedded-tls
-    secret:
-      secretName: {{ .Values.embeddedTls.secret.name }}
-  {{- end }}
-{{- end }}
 {{- if or .Values.volumeMounts .Values.embeddedTls.enabled }}
 volumeMounts:
   {{- with .Values.volumeMounts }}
