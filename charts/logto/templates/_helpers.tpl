@@ -83,7 +83,7 @@ volumes:
   {{- if .Values.embeddedTls.enabled }}
   - name: embedded-tls
     secret:
-    secretName: {{ .Values.embeddedTls.secret.name }}
+      secretName: {{ .Values.embeddedTls.secret.name }}
   {{- end }}
 {{- end }}
 {{- if or .Values.volumeMounts .Values.embeddedTls.enabled }}
