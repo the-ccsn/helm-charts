@@ -89,6 +89,8 @@ volumeMounts:
 image: postgres:15-alpine
 imagePullPolicy: {{ .Values.image.pullPolicy }}
 env:
+  - name: CI
+    value: 'true'
   {{- if .Values.dbUrl.valueFrom }}
   - name: DB_URL
     valueFrom:
