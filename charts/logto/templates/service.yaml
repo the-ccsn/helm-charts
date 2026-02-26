@@ -10,9 +10,7 @@ spec:
   type: {{ $svc.type }}
   ports:
     - port: {{ $svc.port }}
-      targetPort: {{ $svc.name }}
       protocol: TCP
-      name: {{ $svc.name }}
   selector:
     {{- include "logto.selectorLabels" $ | nindent 4 }}
 ---
