@@ -85,6 +85,35 @@ volumeMounts:
   {{- end }}
 {{- end }}
 {{- end -}}
+{{- define "logto.waitForDbContainerSpec" -}}
+image: postgres:15-alpine
+imagePullPolicy: {{ .Values.image.pullPolicy }}
+env:
+  {{- if .Values.dbUrl.valueFrom }}
+  - name: DB_URL
+    valueFrom:
+      {{- toYaml .Values.dbUrl.valueFrom | nindent 6 }}
+  {{- else if .Values.dbUrl.value }}
+  - name: DB_URL
+    value: {{ .Values.dbUrl.value | quote }}
+  {{- end }}
+command:
+  - /bin/sh
+  - -c
+  - |
+    HP_RAW=$(echo "$DB_URL" | sed -e 's|^.*://||' -e 's|^.*@||' -e 's|/.*$||')  
+    HOST=$(echo "$HP_RAW" | cut -d':' -f1)  
+    PORT=$(echo "$HP_RAW" | grep ":" | cut -d':' -f2) 
+    PORT=${PORT:-5432}  
+    DBNAME=$(echo "$DB_URL" | sed -e 's|^.*/||' -e 's|?.*$||')  
+    DBNAME=${DBNAME:-postgres}  
+
+    until pg_isready -h "$HOST" -p "$PORT" -d "$DBNAME" -t 2; do
+      echo "Waiting for database: $DBNAME at $HOST:$PORT"
+      sleep 2
+    done
+    echo "Database is ready: $DBNAME at $HOST:$PORT"
+{{- end -}}
 {{/*
 Return the dict of all services (core/admin)
 Usage: include "logto.serviceDict" .
