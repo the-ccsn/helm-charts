@@ -3,7 +3,7 @@ kind: Job
 metadata:
   name: {{ include "logto.fullname" . }}-alteration
   annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
 spec:
   template:
