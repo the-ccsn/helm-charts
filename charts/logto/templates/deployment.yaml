@@ -31,6 +31,29 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
+        - name: wait-for-db
+          image: postgres:15-alpine
+          {{- include "logto.commonContainerSpec" . | nindent 10 }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              if [ -z "$DATABASE_URL" ]; then  
+                echo "ERROR: DATABASE_URL is not set"  
+                exit 1  
+              fi  
+              HP_RAW=$(echo "$DATABASE_URL" | sed -e 's|^.*://||' -e 's|^.*@||' -e 's|/.*$||')  
+              HOST=$(echo "$HP_RAW" | cut -d':' -f1)  
+              PORT=$(echo "$HP_RAW" | grep ":" | cut -d':' -f2) 
+              PORT=${PORT:-5432}  
+              DBNAME=$(echo "$DATABASE_URL" | sed -e 's|^.*/||' -e 's|?.*$||')  
+              DBNAME=${DBNAME:-postgres}  
+
+              until pg_isready -h "$HOST" -p "$PORT" -d "$DBNAME" -t 2; do
+                echo "Waiting for database: $DBNAME at $HOST:$PORT"
+                sleep 2
+              done
+              echo "Database is ready: $DBNAME at $HOST:$PORT"
         - name: {{ .Chart.Name }}-init
           {{- include "logto.commonContainerSpec" . | nindent 10 }}
           command:
