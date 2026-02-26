@@ -40,14 +40,21 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  name: core
+  # name: logto-core
   port: 3001
 
-emmbedded_tls:
+embeddedTls:
   enabled: false
-  secretName: logto-tls
-  certName: tls.crt
-  keyName: tls.key
+  secret:
+    name: logto-tls
+    certName: tls.crt
+    keyName: tls.key
+
+# envFrom: 
+#   - secretRef:
+#       name: my-secret
+#   - configMapRef:
+#       name: my-configmap
 
 # The Postgres DSN for Logto database. Use valueFrom or value, both optional.
 dbUrl:
@@ -65,9 +72,9 @@ endpoint: ""
 # nodeEnv: ""
 # (v1.36.0+) PostgreSQL statement_timeout in milliseconds. Use a numeric string (e.g., 5000) or DISABLE_TIMEOUT to omit the startup parameter.
 # databaseStatementTimeout: ""
-# Path to HTTPS certificate file (see Enabling HTTPS for details)
+# Path to HTTPS certificate file (see Enabling HTTPS for details) Default target to cert configured in embedded TLS if enabled.
 # httpsCertPath: ""
-# Path to HTTPS key file (see Enabling HTTPS for details)
+# Path to HTTPS key file (see Enabling HTTPS for details) Default target to key configured in embedded TLS if enabled.
 # httpsKeyPath: ""
 # Whether to trust proxy headers (true/false)
 # trustProxyHeader: ""
@@ -85,7 +92,7 @@ console:
   # disableLocalhost: false
   service:
     type: ClusterIP
-    name: admin
+    # name: logto-admin
     port: 3002
 
   # Ingress for console (admin UI, subdomain)

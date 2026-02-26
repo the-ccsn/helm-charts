@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+      restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
       containers:
       - name: {{ .Chart.Name }}-alteration
         {{- include "logto.commonContainerSpec" . | nindent 8 }}
@@ -13,7 +14,6 @@ spec:
         args:
           - '-c'
           - 'npm run alteration deploy latest'
-        restartPolicy: Never
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

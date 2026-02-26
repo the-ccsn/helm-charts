@@ -42,10 +42,10 @@ spec:
         - name: {{ .Chart.Name }}
           {{- include "logto.commonContainerSpec" . | nindent 10 }}
           ports:
-            - name: core
-              containerPort: {{ .Values.service.port }}
-            - name: console
-              containerPort: {{ .Values.console.service.port }}
+            - name: {{ include "logto.coreServiceName" . }}
+              containerPort: {{ include "logto.coreServicePort" . }}
+            - name: {{ include "logto.adminServiceName" . }}
+              containerPort: {{ include "logto.adminServicePort" . }}
           livenessProbe:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:

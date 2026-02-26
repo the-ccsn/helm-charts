@@ -46,10 +46,16 @@ env:
   {{- if .Values.httpsCertPath }}
   - name: HTTPS_CERT_PATH
     value: {{ .Values.httpsCertPath | quote }}
+  {{- else if .Values.embeddedTls.enabled }}
+  - name: HTTPS_CERT_PATH
+    value: {{ printf "/etc/logto/tls/%s" .Values.embeddedTls.secret.certName | quote }}
   {{- end }}
   {{- if .Values.httpsKeyPath }}
   - name: HTTPS_KEY_PATH
     value: {{ .Values.httpsKeyPath | quote }}
+  {{- else if .Values.embeddedTls.enabled }}
+  - name: HTTPS_KEY_PATH
+    value: {{ printf "/etc/logto/tls/%s" .Values.embeddedTls.secret.keyName | quote }}
   {{- end }}
   {{- if .Values.trustProxyHeader }}
   - name: TRUST_PROXY_HEADER
@@ -63,19 +69,18 @@ env:
   - name: SECRET_VAULT_KEK
     value: {{ .Values.secretVaultKek | quote }}
   {{- end }}
+{{- with .Values.envFrom }}
 envFrom:
-  - secretRef:
-      name: {{ include "logto.secretName" . }}
-  - configMapRef:
-      name: {{ include "logto.configMapName" . }}
+  {{- toYaml . | nindent 2 }}
+{{- end }}
 resources:
   {{- toYaml .Values.resources | nindent 2 }}
-{{- if or .Values.volumeMounts .Values.embedded_tls.enabled }}
+{{- if or .Values.volumeMounts .Values.embeddedTls.enabled }}
 volumeMounts:
   {{- with .Values.volumeMounts }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
-  {{- if .Values.embedded_tls.enabled }}
+  {{- if .Values.embeddedTls.enabled }}
   - name: embedded_tls
     mountPath: /etc/logto/tls
     readOnly: true
@@ -105,13 +110,21 @@ Return the admin service port for logto
 Return the admin service name for logto
 */}}
 {{- define "logto.adminServiceName" -}}
-{{ include "logto.fullname" . }}-{{ .Values.console.service.name }}
+{{- if .Values.console.service.name -}}
+{{- .Values.console.service.name -}}
+{{- else -}}
+{{- include "logto.fullname" . }}-console
+{{- end -}}
 {{- end -}}
 {{/*
 Return the core service name for logto
 */}}
 {{- define "logto.coreServiceName" -}}
-{{ include "logto.fullname" . }}-{{ .Values.service.name }}
+{{- if .Values.service.name -}}
+{{- .Values.service.name -}}
+{{- else -}}
+{{- include "logto.fullname" . }}-core
+{{- end -}}
 {{- end -}}
 {{/*
 Expand the name of the chart.
@@ -174,17 +187,4 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
-{{- end }}
-
-{{/*
-Create the name of secret
-*/}}
-{{- define "logto.secretName" -}}
-{{- include "logto.fullname" . }}
-{{- end }}
-
-{{/*
-*/}}
-{{- define "logto.configMapName" -}}
-{{- include "logto.fullname" . }}
 {{- end }}

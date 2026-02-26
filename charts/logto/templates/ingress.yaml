@@ -2,29 +2,30 @@
 {{- range $key, $svc := $services }}
 {{- $ingress := (ternary $.Values.console.ingress $.Values.ingress (eq $key "admin")) -}}
 {{- if $ingress.enabled }}
-{{- if and $ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
-  {{- if not (hasKey $ingress.annotations "kubernetes.io/ingress.class") }}
-  {{- $_ := set $ingress.annotations "kubernetes.io/ingress.class" $ingress.className}}
+{{- $annotations := default (dict) $ingress.annotations -}}
+{{- if and $ingress.className (not (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion)) }}
+  {{- if not (hasKey $annotations "kubernetes.io/ingress.class") }}
+    {{- $_ := set $annotations "kubernetes.io/ingress.class" $ingress.className }}
   {{- end }}
 {{- end }}
-{{- if semverCompare ">=1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1
-{{- else if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- else if semverCompare ">=1.14-0" $.Capabilities.KubeVersion.GitVersion -}}
 apiVersion: networking.k8s.io/v1beta1
 {{- else -}}
 apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ include (printf "logto.%sServiceName" $key) . }}
+  name: {{ include (printf "logto.%sServiceName" $key) $ }}
   labels:
     {{- include "logto.labels" . | nindent 4 }}
-  {{- with $ingress.annotations }}
+  {{- with $annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
-  {{- if and $ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
+  {{- if and $ingress.className (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ $ingress.className }}
   {{- end }}
   {{- if $ingress.tls }}
@@ -50,12 +51,12 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ include (printf "logto.%sServiceName" $key) . }}
+                name: {{ include (printf "logto.%sServiceName" $key) $ }}
                 port:
-                  number: {{ include (printf "logto.%sServicePort" $key) . }}
+                  number: {{ include (printf "logto.%sServicePort" $key) $ }}
               {{- else }}
-              serviceName: {{ include (printf "logto.%sServiceName" $key) . }}
-              servicePort: {{ include (printf "logto.%sServicePort" $key) . }}
+              serviceName: {{ include (printf "logto.%sServiceName" $key) $ }}
+              servicePort: {{ include (printf "logto.%sServicePort" $key) $ }}
               {{- end }}
           {{- end }}
     {{- end }}
