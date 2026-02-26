@@ -1,4 +1,130 @@
 {{/*
+Common container spec for Logto (image, imagePullPolicy, securityContext, env, envFrom, resources, volumeMounts)
+Usage: include "logto.commonContainerSpec" .
+*/}}
+{{- define "logto.commonContainerSpec" -}}
+securityContext:
+  {{- toYaml .Values.securityContext | nindent 2 }}
+image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+imagePullPolicy: {{ .Values.image.pullPolicy }}
+env:
+  - name: PORT
+    value: {{ include "logto.coreServicePort" . | quote }}
+  - name: ADMIN_PORT
+    value: {{ include "logto.adminServicePort" . | quote }}
+
+  {{- if .Values.dbUrl.valueFrom }}
+  - name: DB_URL
+    valueFrom:
+      {{- toYaml .Values.dbUrl.valueFrom | nindent 6 }}
+  {{- else if .Values.dbUrl.value }}
+  - name: DB_URL
+    value: {{ .Values.dbUrl.value | quote }}
+  {{- end }}
+  {{- if .Values.endpoint }}
+  - name: ENDPOINT
+    value: {{ .Values.endpoint | quote }}
+  {{- end }}
+  {{- if .Values.console.endpoint }}
+  - name: ADMIN_ENDPOINT
+    value: {{ .Values.console.endpoint | quote }}
+  {{- end }}
+
+  {{- if .Values.console.disableLocalhost }}
+  - name: ADMIN_DISABLE_LOCALHOST
+    value: "true"
+  {{- end }}
+
+  {{- if .Values.nodeEnv }}
+  - name: NODE_ENV
+    value: {{ .Values.nodeEnv | quote }}
+  {{- end }}
+  {{- if .Values.databaseStatementTimeout }}
+  - name: DATABASE_STATEMENT_TIMEOUT
+    value: {{ .Values.databaseStatementTimeout | quote }}
+  {{- end }}
+  {{- if .Values.httpsCertPath }}
+  - name: HTTPS_CERT_PATH
+    value: {{ .Values.httpsCertPath | quote }}
+  {{- else if .Values.embeddedTls.enabled }}
+  - name: HTTPS_CERT_PATH
+    value: {{ printf "/etc/logto/tls/%s" .Values.embeddedTls.secret.certName | quote }}
+  {{- end }}
+  {{- if .Values.httpsKeyPath }}
+  - name: HTTPS_KEY_PATH
+    value: {{ .Values.httpsKeyPath | quote }}
+  {{- else if .Values.embeddedTls.enabled }}
+  - name: HTTPS_KEY_PATH
+    value: {{ printf "/etc/logto/tls/%s" .Values.embeddedTls.secret.keyName | quote }}
+  {{- end }}
+  {{- if .Values.trustProxyHeader }}
+  - name: TRUST_PROXY_HEADER
+    value: {{ .Values.trustProxyHeader | quote }}
+  {{- end }}
+  {{- if .Values.caseSensitiveUsername }}
+  - name: CASE_SENSITIVE_USERNAME
+    value: {{ .Values.caseSensitiveUsername | quote }}
+  {{- end }}
+  {{- if .Values.secretVaultKek }}
+  - name: SECRET_VAULT_KEK
+    value: {{ .Values.secretVaultKek | quote }}
+  {{- end }}
+{{- with .Values.envFrom }}
+envFrom:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
+{{- if or .Values.volumeMounts .Values.embeddedTls.enabled }}
+volumeMounts:
+  {{- with .Values.volumeMounts }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- if .Values.embeddedTls.enabled }}
+  - name: embedded-tls
+    mountPath: /etc/logto/tls
+    readOnly: true
+  {{- end }}
+{{- end }}
+{{- end -}}
+{{/*
+Return the dict of all services (core/admin)
+Usage: include "logto.serviceDict" .
+*/}}
+{{- define "logto.serviceDict" -}}
+{{ dict "core" .Values.service "admin" .Values.console.service | toYaml }}
+{{- end -}}
+{{/*
+Return the core service port for logto
+*/}}
+{{- define "logto.coreServicePort" -}}
+{{ .Values.service.port }}
+{{- end -}}
+{{/*
+Return the admin service port for logto
+*/}}
+{{- define "logto.adminServicePort" -}}
+{{ .Values.console.service.port }}
+{{- end -}}
+{{/*
+Return the admin service name for logto
+*/}}
+{{- define "logto.adminServiceName" -}}
+{{- if .Values.console.service.name -}}
+{{- .Values.console.service.name -}}
+{{- else -}}
+{{- include "logto.fullname" . }}-console
+{{- end -}}
+{{- end -}}
+{{/*
+Return the core service name for logto
+*/}}
+{{- define "logto.coreServiceName" -}}
+{{- if .Values.service.name -}}
+{{- .Values.service.name -}}
+{{- else -}}
+{{- include "logto.fullname" . }}-core
+{{- end -}}
+{{- end -}}
+{{/*
 Expand the name of the chart.
 */}}
 {{- define "logto.name" -}}
@@ -59,17 +185,4 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
-{{- end }}
-
-{{/*
-Create the name of secret
-*/}}
-{{- define "logto.secretName" -}}
-{{- include "logto.fullname" . }}
-{{- end }}
-
-{{/*
-*/}}
-{{- define "logto.configMapName" -}}
-{{- include "logto.fullname" . }}
 {{- end }}

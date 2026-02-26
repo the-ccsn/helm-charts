@@ -5,45 +5,25 @@ metadata:
 spec:
   template:
     spec:
+      restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
       containers:
       - name: {{ .Chart.Name }}-alteration
-        securityContext:
-          {{- toYaml .Values.securityContext | nindent 12 }}
-        image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- include "logto.commonContainerSpec" . | nindent 8 }}
         command:
           - /bin/sh
         args:
           - '-c'
           - 'npm run alteration deploy latest'
-        env:
-          {{- if .Values.postgresql.enabled }}
-        - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "postgresql.v1.secretName" .Subcharts.postgresql }}
-              key: password
-          {{- end }}
-        envFrom:
-        - secretRef:
-            name: {{ include "logto.secretName" . }}
-        - configMapRef:
-            name: {{ include "logto.configMapName" . }}
-        resources:
-          {{- toYaml .Values.resources | nindent 12 }}
-        {{- with .Values.volumeMounts }}
-        volumeMounts:
-          {{- toYaml . | nindent 12 }}
-        {{- end }}
-          {{- if .Values.emmbedded_tls.enabled }}
-        - name: emmbedded_tls
-          mountPath: /etc/logto/tls
-          readOnly: true
-          {{- end }}
-        restartPolicy: Never
-      {{- with .Values.volumes }}
+      {{- if or .Values.volumes .Values.embeddedTls.enabled }}
       volumes:
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.embeddedTls.enabled }}
+        - name: embedded-tls
+          secret:
+            secretName: {{ .Values.embeddedTls.secret.name }}
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
@@ -57,3 +37,4 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  backoffLimit: 0 # Disable automatic retries to prevent potential data corruption. Handle retries manually if needed.
