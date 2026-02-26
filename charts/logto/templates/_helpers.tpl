@@ -70,15 +70,17 @@ envFrom:
       name: {{ include "logto.configMapName" . }}
 resources:
   {{- toYaml .Values.resources | nindent 2 }}
-{{- with .Values.volumeMounts }}
+{{- if or .Values.volumeMounts .Values.embedded_tls.enabled }}
 volumeMounts:
+  {{- with .Values.volumeMounts }}
   {{- toYaml . | nindent 2 }}
-{{- end }}
-  {{- if .Values.emmbedded_tls.enabled }}
-- name: emmbedded_tls
-  mountPath: /etc/logto/tls
-  readOnly: true
   {{- end }}
+  {{- if .Values.embedded_tls.enabled }}
+  - name: embedded_tls
+    mountPath: /etc/logto/tls
+    readOnly: true
+  {{- end }}
+{{- end }}
 {{- end -}}
 {{/*
 Return the dict of all services (core/admin)
