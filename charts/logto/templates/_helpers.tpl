@@ -81,9 +81,11 @@ volumeMounts:
   {{- toYaml . | nindent 2 }}
   {{- end }}
   {{- if .Values.embeddedTls.enabled }}
-  - name: embedded_tls
+  - name: embedded-tls
     mountPath: /etc/logto/tls
     readOnly: true
+    secret:
+      secretName: {{ .Values.embeddedTls.secret.name }}
   {{- end }}
 {{- end }}
 {{- end -}}
