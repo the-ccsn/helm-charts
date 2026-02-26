@@ -4,7 +4,7 @@ Usage: include "logto.commonContainerSpec" .
 */}}
 {{- define "logto.commonContainerSpec" -}}
 securityContext:
-  {{- toYaml .Values.securityContext | nindent 12 }}
+  {{- toYaml .Values.securityContext | nindent 2 }}
 image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
 imagePullPolicy: {{ .Values.image.pullPolicy }}
 env:
