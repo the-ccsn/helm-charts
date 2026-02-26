@@ -11,24 +11,7 @@ spec:
       restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
       initContainers:
         - name: wait-for-db
-          image: postgres:15-alpine
-          {{- include "logto.commonContainerSpec" . | nindent 10 }}
-          command:
-            - /bin/sh
-            - -c
-            - |
-              HP_RAW=$(echo $DATABASE_URL | sed -e 's|^.*://||' -e 's|^.*@||' -e 's|/.*$||')
-              HOST=$(echo $HP_RAW | cut -d':' -f1)
-              PORT=$(echo $HP_RAW | grep ":" | cut -d':' -f2)
-              PORT=${PORT:-5432}
-              DBNAME=$(echo $DATABASE_URL | sed -e 's|^.*/||' -e 's|?.*$||')
-              DBNAME=${DBNAME:-postgres}
-
-              until pg_isready -h "$HOST" -p "$PORT" -d "$DBNAME" -t 2; do
-                echo "Waiting for database: $DBNAME at $HOST:$PORT"
-                sleep 2
-              done
-              echo "Database is ready: $DBNAME at $HOST:$PORT"
+          {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
       containers:
         - name: {{ .Chart.Name }}-alteration
           {{- include "logto.commonContainerSpec" . | nindent 10 }}
