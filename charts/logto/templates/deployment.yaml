@@ -50,7 +50,7 @@ spec:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
-      {{- if .Values.volumes or .Values.embeddedTls.enabled }}
+      {{- if or .Values.volumes .Values.embeddedTls.enabled }}
       volumes:
         {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
