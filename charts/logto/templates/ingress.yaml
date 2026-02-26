@@ -19,7 +19,7 @@ kind: Ingress
 metadata:
   name: {{ include (printf "logto.%sServiceName" $key) $ }}
   labels:
-    {{- include "logto.labels" . | nindent 4 }}
+    {{- include "logto.labels" $ | nindent 4 }}
   {{- with $annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
