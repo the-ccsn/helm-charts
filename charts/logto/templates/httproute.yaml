@@ -22,10 +22,12 @@ spec:
   parentRefs:
     {{- toYaml $parentRefs | nindent 4 }}
   {{- end }}
+  {{- with $route.hostnames }}
   hostnames:
-    {{- range $route.hostnames }}
+    {{- range . }}
     - {{ . | quote }}
     {{- end }}
+  {{- end }}
   rules:
     {{- if $route.rules }}
       {{- toYaml $route.rules | nindent 4 }}
