@@ -2,6 +2,7 @@
 {{- range $key, $svc := $services }}
 {{- $ingress := (ternary $.Values.console.ingress $.Values.ingress (eq $key "admin")) -}}
 {{- if $ingress.enabled }}
+---
 {{- $annotations := default (dict) $ingress.annotations -}}
 {{- if and $ingress.className (not (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey $annotations "kubernetes.io/ingress.class") }}
