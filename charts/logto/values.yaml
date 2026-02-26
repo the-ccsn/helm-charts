@@ -50,6 +50,7 @@ embeddedTls:
     certName: tls.crt
     keyName: tls.key
 
+## Extra environment variables for Logto process.
 # envFrom: 
 #   - secretRef:
 #       name: my-secret
@@ -84,7 +85,6 @@ endpoint: ""
 # secretVaultKek: ""
 
 ## Console (admin UI) configuration
-# All settings for the admin console (previously admin) are nested under this field.
 console:
   # The endpoint for Logto Admin Console (affects Admin Console Redirect URIs)
   endpoint: ""
@@ -95,7 +95,7 @@ console:
     # name: logto-admin
     port: 3002
 
-  # Ingress for console (admin UI, subdomain)
+  ## Ingress for console
   # This section configures the ingress for the admin console, typically on a subdomain.
   ingress:
     enabled: false
@@ -112,51 +112,60 @@ console:
     #    hosts:
     #      - admin.logto.local
 
-  ## HTTPRoute configuration for Gateway API (admin)
+  ## HTTPRoute configuration for Gateway API for console
   # Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
   httpRoute:
     enabled: false
-    annotations: {}
-    labels: {}
-    parentRefs: []
-    hostnames: []
-    #   - admin.your-domain.com
+    # annotations: {}
+    # labels: {}
+    # parentRefs:
+    #   - name: default-gateway
+    #     namespace: default
+    # hostnames:
+    #   - your.domain.com
+    # Note: The default rules backendRefs in the rules will be automatically set to point to the core service.
+    # If rules provided, the default rules will be overrided. You will need to specify the backendRefs
+    # by yourself, and the service will not be automatically referenced.
     # rules:
     #   - matches:
     #       - path:
     #           type: PathPrefix
     #           value: /
     #     backendRefs:
-    #       - name: <release>-admin
-    #         port: 3002
+    #       - name: <release>-core
+    #         port: 3001
 
+## Ingress configuration for core service
 ingress:
-  # Ingress for core (main service, root domain)
   enabled: false
   className: ""
   annotations: {}
   # hosts: User must provide their own hostnames. Example below:
-  hosts: []
+  # hosts:
   #   - host: your.domain.com
   #     paths:
   #       - path: /
   #         pathType: Prefix
   # Note: The backend service reference in the ingress will be automatically set.
-  tls: []
+  # tls:
   #  - secretName: chart-example-tls
   #    hosts:
   #      - logto.local
 
-## HTTPRoute configuration for Gateway API (core)
+## HTTPRoute configuration for Gateway API for core service
 # Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
 httpRoute:
-  # HTTPRoute for core (main service, root domain)
   enabled: false
-  annotations: {}
-  labels: {}
-  parentRefs: []
-  hostnames: []
+  # annotations: {}
+  # labels: {}
+  # parentRefs:
+  #   - name: default-gateway
+  #     namespace: default
+  # hostnames:
   #   - your.domain.com
+  # Note: The default rules backendRefs in the rules will be automatically set to point to the core service.
+  # If rules provided, the default rules will be overrided. You will need to specify the backendRefs
+  # by yourself, and the service will not be automatically referenced.
   # rules:
   #   - matches:
   #       - path:
