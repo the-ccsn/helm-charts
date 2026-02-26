@@ -10,7 +10,6 @@ jobs:
     permissions:
       contents: write # to push chart release and create a release (helm/chart-releaser-action)
       packages: write # needed for ghcr access
-      id-token: write # needed for signing with GPG key stored in GitHub Secrets
 
     runs-on: ubuntu-latest
     steps:
