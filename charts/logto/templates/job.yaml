@@ -6,6 +6,7 @@ spec:
   template:
     spec:
       restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
+      backoffLimit: 0 # Disable automatic retries to prevent potential data corruption. Handle retries manually if needed.
       containers:
       - name: {{ .Chart.Name }}-alteration
         {{- include "logto.commonContainerSpec" . | nindent 8 }}
