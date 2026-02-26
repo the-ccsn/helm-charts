@@ -73,8 +73,6 @@ env:
 envFrom:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-resources:
-  {{- toYaml .Values.resources | nindent 2 }}
 {{- if or .Values.volumeMounts .Values.embeddedTls.enabled }}
 volumeMounts:
   {{- with .Values.volumeMounts }}
