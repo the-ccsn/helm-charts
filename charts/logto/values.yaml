@@ -57,7 +57,29 @@ embeddedTls:
 #   - configMapRef:
 #       name: my-configmap
 
-# The Postgres DSN for Logto database. Use valueFrom or value, both optional.
+deployOfficialConnectors: true
+
+autoSeeding:
+  enabled: true
+  # Database URL for auto seeding. Use valueFrom or value, if both unset, will use runtime dbUrl.
+  # dbUrl:
+  #   valueFrom: 
+  #     secretKeyRef:
+  #       name: "your-secret"
+  #       key: "DB_URL"
+  #   value: "postgresql://user:pass@host:5432/db"
+
+autoAlteration:
+  enabled: true
+  # Database URL for auto alteration. Use valueFrom or value, if both unset, will use runtime dbUrl.
+  # dbUrl: 
+  #   valueFrom: 
+  #     secretKeyRef:
+  #       name: "your-secret"
+  #       key: "DB_URL"
+  #   value: "postgresql://user:pass@host:5432/db"
+
+# The Postgres DSN for Logto database. Use valueFrom or value.
 dbUrl:
   # valueFrom: 
   #   secretKeyRef:
