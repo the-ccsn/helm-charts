@@ -13,6 +13,8 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# The deployment requires access to job status to ensure the pre-app job has completed before starting the main application.
+# With `create: true`, Role and RoleBinding will be created to grant the necessary permissions along with the service account used by the deployment.
 serviceAccount:
   # Specifies whether a service account should be created
   create: true

@@ -1,12 +1,11 @@
-{{- if .Values.autoAlteration.enabled }}
+{{- if include "logto.installPreAppJob" . }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "logto.fullname" . }}-alteration
+  name: {{ include "logto.preAppJobName" . }}
   annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-weight": "2"
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
 spec:
   template:
     spec:
@@ -14,7 +13,7 @@ spec:
       initContainers:
         - name: wait-for-db
           {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
-      containers:
+        {{- if .Values.autoAlteration.enabled }}
         - name: {{ .Chart.Name }}-alteration
           {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoAlteration.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
           command:
@@ -22,6 +21,26 @@ spec:
           args:
             - '-c'
             - 'npm run alteration deploy latest'
+        {{- end }}
+        {{- if .Values.autoSeeding.enabled }}
+        - name: {{ .Chart.Name }}-seed
+          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoSeeding.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - 'npm run cli db seed -- --swe'
+        {{- end }}
+        {{- if .Values.deployOfficialConnectors }}
+        - name: {{ .Chart.Name }}-connector-deploy
+          {{- include "logto.commonContainerSpec" (dict "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - 'npm run cli connector add -- --official'
+        {{- end }}
+      containers:
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
@@ -39,4 +58,4 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
   backoffLimit: 0 # Disable automatic retries to prevent potential data corruption. Handle retries manually if needed.
-{{- end }}
+{{- end -}}

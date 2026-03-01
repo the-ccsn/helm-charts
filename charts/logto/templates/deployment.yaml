@@ -33,6 +33,15 @@ spec:
       initContainers:
         - name: wait-for-db
           {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
+        {{- if include "logto.installPreAppJob" . }}
+        - name: wait-for-pre-app-job
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl wait --for=condition=complete job/{{ include "logto.preAppJobName" . }} --timeout=600s
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           {{- include "logto.commonContainerSpec" . | nindent 10 }}
