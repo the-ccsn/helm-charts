@@ -112,8 +112,16 @@ command:
   - /bin/sh
   - -c
   - |
+    if [ -z "${DB_URL:-}" ]; then
+      echo "DB_URL is not set. Configure dbUrl.value, dbUrl.valueFrom, or envFrom." >&2
+      exit 1
+    fi
     HP_RAW=$(echo "$DB_URL" | sed -e 's|^.*://||' -e 's|^.*@||' -e 's|/.*$||')  
     HOST=$(echo "$HP_RAW" | cut -d':' -f1)  
+    if [ -z "$HOST" ]; then
+      echo "Failed to parse host from DB_URL: $DB_URL" >&2
+      exit 1
+    fi
     PORT=$(echo "$HP_RAW" | grep ":" | cut -d':' -f2) 
     PORT=${PORT:-5432}  
     DBNAME=$(echo "$DB_URL" | sed -e 's|^.*/||' -e 's|?.*$||')  
