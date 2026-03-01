@@ -10,6 +10,7 @@ metadata:
 spec:
   template:
     spec:
+      restartPolicy: Never
       containers:
         - name: {{ .Chart.Name }}-connector-deploy
           {{- include "logto.commonContainerSpec" (dict "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
