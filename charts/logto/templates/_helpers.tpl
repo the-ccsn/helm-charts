@@ -104,6 +104,10 @@ env:
   - name: DB_URL
     value: {{ .Values.dbUrl.value | quote }}
   {{- end }}
+{{- with .Values.envFrom }}
+envFrom:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
 command:
   - /bin/sh
   - -c
