@@ -33,27 +33,15 @@ spec:
       initContainers:
         - name: wait-for-db
           {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
-        - name: {{ .Chart.Name }}-seed
-          {{- include "logto.commonContainerSpec" . | nindent 10 }}
+        {{- if include "logto.installPreAppJob" . }}
+        - name: wait-for-pre-app-job
+          image: bitnami/kubectl:latest
           command:
             - /bin/sh
-          args:
-            - '-c'
-            - 'npm run cli db seed -- --swe'
-        - name: {{ .Chart.Name }}-alteration
-          {{- include "logto.commonContainerSpec" . | nindent 10 }}
-          command:
-            - /bin/sh
-          args:
-            - '-c'
-            - 'npm run alteration deploy latest'
-        - name: {{ .Chart.Name }}-init-connectors
-          {{- include "logto.commonContainerSpec" . | nindent 10 }}
-          command:
-            - /bin/sh
-          args:
-            - '-c'
-            - 'npm run cli connector add -- --official'
+            - -c
+            - |
+              kubectl wait --for=condition=complete job/{{ include "logto.preAppJobName" . }} --timeout=600s
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           {{- include "logto.commonContainerSpec" . | nindent 10 }}

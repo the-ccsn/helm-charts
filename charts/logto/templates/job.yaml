@@ -1,0 +1,68 @@
+{{- if include "logto.installPreAppJob" . }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "logto.preAppJobName" . }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  template:
+    spec:
+      restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
+      initContainers:
+        - name: wait-for-db
+          {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
+        {{- if .Values.autoAlteration.enabled }}
+        - name: {{ .Chart.Name }}-alteration
+          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoAlteration.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - 'npm run alteration deploy latest'
+        {{- end }}
+        {{- if .Values.autoSeeding.enabled }}
+        - name: {{ .Chart.Name }}-seed
+          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoSeeding.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - 'npm run cli db seed -- --swe'
+        {{- end }}
+        {{- if .Values.deployOfficialConnectors }}
+        - name: {{ .Chart.Name }}-connector-deploy
+          {{- include "logto.commonContainerSpec" (dict "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - 'npm run cli connector add -- --official'
+        {{- end }}
+      containers:
+      - name: pre-app-complete
+        image: busybox:latest
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - /bin/sh
+          - -c
+          - 'echo "Pre-app initialization complete."'
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  backoffLimit: 0 # Disable automatic retries to prevent potential data corruption. Handle retries manually if needed.
+{{- end -}}

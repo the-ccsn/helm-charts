@@ -13,6 +13,8 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# The deployment requires access to job status to ensure the pre-app job has completed before starting the main application.
+# With `create: true`, Role and RoleBinding will be created to grant the necessary permissions along with the service account used by the deployment.
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -57,7 +59,55 @@ embeddedTls:
 #   - configMapRef:
 #       name: my-configmap
 
-# The Postgres DSN for Logto database. Use valueFrom or value, both optional.
+deployOfficialConnectors: true
+
+autoSeeding:
+  enabled: true
+  # Database URL for auto seeding. Use valueFrom or value, if both unset, will use runtime dbUrl.
+  # dbUrl:
+  #   valueFrom: 
+  #     secretKeyRef:
+  #       name: "your-secret"
+  #       key: "DB_URL"
+  #   value: "postgresql://user:pass@host:5432/db"
+
+autoAlteration:
+  enabled: true
+  # Database URL for auto alteration. Use valueFrom or value, if both unset, will use runtime dbUrl.
+  # dbUrl: 
+  #   valueFrom: 
+  #     secretKeyRef:
+  #       name: "your-secret"
+  #       key: "DB_URL"
+  #   value: "postgresql://user:pass@host:5432/db"
+
+# The Postgres DSN for Logto database.
+# 
+# Configuration options:
+#   1. dbUrl.value: Direct connection string
+#   2. dbUrl.valueFrom: Reference to a secret or configmap key
+#   3. envFrom: Supply DB_URL via external secret/configmap (see envFrom section above)
+#   4. Empty mapping {}: Valid - DB_URL will not be set by the chart
+#
+# Note: If dbUrl is empty ({}) and DB_URL is not provided via envFrom or other means,
+# the DB_URL environment variable will not be set in the container. If Logto requires
+# DB_URL to start, the application will fail at runtime.
+#
+# Examples:
+#   # Option 1: Direct value
+#   dbUrl:
+#     value: "postgresql://user:pass@host:5432/db"
+#
+#   # Option 2: Reference a secret
+#   dbUrl:
+#     valueFrom:
+#       secretKeyRef:
+#         name: "your-secret"
+#         key: "DB_URL"
+#
+#   # Option 3: Use envFrom (configure above in envFrom section)
+#   dbUrl: {}
+
 dbUrl:
   # valueFrom: 
   #   secretKeyRef:
@@ -65,6 +115,7 @@ dbUrl:
   #     key: "DB_URL"
   # value: "postgresql://user:pass@host:5432/db"
   {}
+
 # The endpoint for Logto core (OIDC issuer identifier, etc.)
 endpoint: ""
 

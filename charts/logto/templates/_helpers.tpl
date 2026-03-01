@@ -1,84 +1,89 @@
 {{/*
 Common container spec for Logto (image, imagePullPolicy, securityContext, env, envFrom, resources, volumeMounts)
 Usage: include "logto.commonContainerSpec" .
+Allows passing dbUrl parameter, which takes precedence over .Values.dbUrl.
+Usage: include "logto.commonContainerSpec" (dict "dbUrl" .dbUrl "context" .)
 */}}
 {{- define "logto.commonContainerSpec" -}}
+{{- $ctx := .context | default . -}}
+{{- $dbUrl := .dbUrl | default $ctx.Values.dbUrl -}}
+{{- $embeddedTls := .embeddedTls | default $ctx.Values.embeddedTls -}}
 securityContext:
-  {{- toYaml .Values.securityContext | nindent 2 }}
-image: "{{ .Values.image.registry}}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-imagePullPolicy: {{ .Values.image.pullPolicy }}
+  {{- toYaml $ctx.Values.securityContext | nindent 2 }}
+image: "{{ $ctx.Values.image.registry }}/{{ $ctx.Values.image.repository }}:{{ $ctx.Values.image.tag | default $ctx.Chart.AppVersion }}"
+imagePullPolicy: {{ $ctx.Values.image.pullPolicy }}
 env:
   - name: PORT
-    value: {{ include "logto.coreServicePort" . | quote }}
+    value: {{ include "logto.coreServicePort" $ctx | quote }}
   - name: ADMIN_PORT
-    value: {{ include "logto.adminServicePort" . | quote }}
+    value: {{ include "logto.adminServicePort" $ctx | quote }}
 
-  {{- if .Values.dbUrl.valueFrom }}
+  {{- if $dbUrl.valueFrom }}
   - name: DB_URL
     valueFrom:
-      {{- toYaml .Values.dbUrl.valueFrom | nindent 6 }}
-  {{- else if .Values.dbUrl.value }}
+      {{- toYaml $dbUrl.valueFrom | nindent 6 }}
+  {{- else if $dbUrl.value }}
   - name: DB_URL
-    value: {{ .Values.dbUrl.value | quote }}
+    value: {{ $dbUrl.value | quote }}
   {{- end }}
-  {{- if .Values.endpoint }}
+  {{- if $ctx.Values.endpoint }}
   - name: ENDPOINT
-    value: {{ .Values.endpoint | quote }}
+    value: {{ $ctx.Values.endpoint | quote }}
   {{- end }}
-  {{- if .Values.console.endpoint }}
+  {{- if $ctx.Values.console.endpoint }}
   - name: ADMIN_ENDPOINT
-    value: {{ .Values.console.endpoint | quote }}
+    value: {{ $ctx.Values.console.endpoint | quote }}
   {{- end }}
 
-  {{- if .Values.console.disableLocalhost }}
+  {{- if $ctx.Values.console.disableLocalhost }}
   - name: ADMIN_DISABLE_LOCALHOST
     value: "true"
   {{- end }}
 
-  {{- if .Values.nodeEnv }}
+  {{- if $ctx.Values.nodeEnv }}
   - name: NODE_ENV
-    value: {{ .Values.nodeEnv | quote }}
+    value: {{ $ctx.Values.nodeEnv | quote }}
   {{- end }}
-  {{- if .Values.databaseStatementTimeout }}
+  {{- if $ctx.Values.databaseStatementTimeout }}
   - name: DATABASE_STATEMENT_TIMEOUT
-    value: {{ .Values.databaseStatementTimeout | quote }}
+    value: {{ $ctx.Values.databaseStatementTimeout | quote }}
   {{- end }}
-  {{- if .Values.httpsCertPath }}
+  {{- if $ctx.Values.httpsCertPath }}
   - name: HTTPS_CERT_PATH
-    value: {{ .Values.httpsCertPath | quote }}
-  {{- else if .Values.embeddedTls.enabled }}
+    value: {{ $ctx.Values.httpsCertPath | quote }}
+  {{- else if $embeddedTls.enabled }}
   - name: HTTPS_CERT_PATH
-    value: {{ printf "/etc/logto/tls/%s" .Values.embeddedTls.secret.certName | quote }}
+    value: {{ printf "/etc/logto/tls/%s" $embeddedTls.secret.certName | quote }}
   {{- end }}
-  {{- if .Values.httpsKeyPath }}
+  {{- if $ctx.Values.httpsKeyPath }}
   - name: HTTPS_KEY_PATH
-    value: {{ .Values.httpsKeyPath | quote }}
-  {{- else if .Values.embeddedTls.enabled }}
+    value: {{ $ctx.Values.httpsKeyPath | quote }}
+  {{- else if $embeddedTls.enabled }}
   - name: HTTPS_KEY_PATH
-    value: {{ printf "/etc/logto/tls/%s" .Values.embeddedTls.secret.keyName | quote }}
+    value: {{ printf "/etc/logto/tls/%s" $embeddedTls.secret.keyName | quote }}
   {{- end }}
-  {{- if .Values.trustProxyHeader }}
+  {{- if $ctx.Values.trustProxyHeader }}
   - name: TRUST_PROXY_HEADER
-    value: {{ .Values.trustProxyHeader | quote }}
+    value: {{ $ctx.Values.trustProxyHeader | quote }}
   {{- end }}
-  {{- if .Values.caseSensitiveUsername }}
+  {{- if $ctx.Values.caseSensitiveUsername }}
   - name: CASE_SENSITIVE_USERNAME
-    value: {{ .Values.caseSensitiveUsername | quote }}
+    value: {{ $ctx.Values.caseSensitiveUsername | quote }}
   {{- end }}
-  {{- if .Values.secretVaultKek }}
+  {{- if $ctx.Values.secretVaultKek }}
   - name: SECRET_VAULT_KEK
-    value: {{ .Values.secretVaultKek | quote }}
+    value: {{ $ctx.Values.secretVaultKek | quote }}
   {{- end }}
-{{- with .Values.envFrom }}
+{{- with $ctx.Values.envFrom }}
 envFrom:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- if or .Values.volumeMounts .Values.embeddedTls.enabled }}
+{{- if or $ctx.Values.volumeMounts $embeddedTls.enabled }}
 volumeMounts:
-  {{- with .Values.volumeMounts }}
+  {{- with $ctx.Values.volumeMounts }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
-  {{- if .Values.embeddedTls.enabled }}
+  {{- if $embeddedTls.enabled }}
   - name: embedded-tls
     mountPath: /etc/logto/tls
     readOnly: true
@@ -99,12 +104,24 @@ env:
   - name: DB_URL
     value: {{ .Values.dbUrl.value | quote }}
   {{- end }}
+{{- with .Values.envFrom }}
+envFrom:
+  {{- toYaml . | nindent 2 }}
+{{- end }}
 command:
   - /bin/sh
   - -c
   - |
+    if [ -z "${DB_URL:-}" ]; then
+      echo "DB_URL is not set. Configure dbUrl.value, dbUrl.valueFrom, or envFrom." >&2
+      exit 1
+    fi
     HP_RAW=$(echo "$DB_URL" | sed -e 's|^.*://||' -e 's|^.*@||' -e 's|/.*$||')  
     HOST=$(echo "$HP_RAW" | cut -d':' -f1)  
+    if [ -z "$HOST" ]; then
+      echo "Failed to parse host from DB_URL: $DB_URL" >&2
+      exit 1
+    fi
     PORT=$(echo "$HP_RAW" | grep ":" | cut -d':' -f2) 
     PORT=${PORT:-5432}  
     DBNAME=$(echo "$DB_URL" | sed -e 's|^.*/||' -e 's|?.*$||')  
@@ -216,4 +233,12 @@ Create the name of the service account to use
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
+{{- end }}
+{{- define "logto.installPreAppJob" -}}
+{{- if or .Values.autoAlteration.enabled .Values.autoSeeding.enabled .Values.deployOfficialConnectors -}}
+true
+{{- end -}}
+{{- end -}}
+{{- define "logto.preAppJobName" }}
+{{- printf "%s-pre-app-job" (include "logto.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
