@@ -41,6 +41,13 @@ spec:
             - 'npm run cli connector add -- --official'
         {{- end }}
       containers:
+      - name: pre-app-complete
+        image: busybox:latest
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+          - /bin/sh
+          - -c
+          - 'echo "Pre-app initialization complete."'
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
