@@ -240,5 +240,5 @@ true
 {{- end -}}
 {{- end -}}
 {{- define "logto.preAppJobName" }}
-{{- printf "%s-pre-app-job" (include "logto.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- printf "%s-%s" (include "logto.fullname" .) .Release.Revision | trunc -63 | trimPrefix "-" }}
 {{- end }}

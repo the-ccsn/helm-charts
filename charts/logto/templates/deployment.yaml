@@ -36,11 +36,26 @@ spec:
         {{- if include "logto.installPreAppJob" . }}
         - name: wait-for-pre-app-job
           image: bitnami/kubectl:latest
+          env:
+            - name: JOB_NAME
+              value: {{ include "logto.preAppJobName" . }}
           command:
             - /bin/sh
             - -c
             - |
-              kubectl wait --for=condition=complete job/{{ include "logto.preAppJobName" . }} --timeout=600s
+              echo "Check status for Job: $JOB_NAME"
+              if kubectl get job "$JOB_NAME" > /dev/null 2>&1; then
+                  echo "Found active Job $JOB_NAME. Entering wait mode..."
+                  
+                  if kubectl wait --for=condition=complete job/"$JOB_NAME" --timeout=600s; then
+                      echo "Job completed successfully. Proceeding..."
+                  else
+                      echo "Job failed or timed out! Application will not start."
+                      exit 1
+                  fi
+              else
+                  echo "Job $JOB_NAME not found. Assuming data is already initialized. Skipping..."
+              fi
         {{- end }}
       containers:
         - name: {{ .Chart.Name }}
