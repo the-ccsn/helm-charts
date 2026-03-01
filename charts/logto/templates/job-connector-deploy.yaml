@@ -19,7 +19,7 @@ spec:
             - '-c'
             - 'npm run cli connector add -- --official'
       # The connector deployment job needs volume mounted to store connectors data, which is shared across multiple tenants.
-      {{- with or .Values.volumes }}
+      {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}
