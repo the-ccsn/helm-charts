@@ -33,33 +33,6 @@ spec:
       initContainers:
         - name: wait-for-db
           {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
-        {{- if .Values.autoSeeding.enabled }}
-        - name: {{ .Chart.Name }}-seed
-          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoSeeding.dbUrl | default nil) "context" .) | nindent 10 }}
-          command:
-            - /bin/sh
-          args:
-            - '-c'
-            - 'npm run cli db seed -- --swe'
-        {{- end }}
-        {{- if .Values.autoAlteration.enabled }}
-        - name: {{ .Chart.Name }}-alteration
-          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoAlteration.dbUrl | default nil) "context" .) | nindent 10 }}
-          command:
-            - /bin/sh
-          args:
-            - '-c'
-            - 'npm run alteration deploy latest'
-        {{- end }}
-        {{- if .Values.deployOfficialConnectors }}
-        - name: {{ .Chart.Name }}-deploy-official-connectors
-          {{- include "logto.commonContainerSpec" . | nindent 10 }}
-          command:
-            - /bin/sh
-          args:
-            - '-c'
-            - 'npm run cli connector add -- --official'
-        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           {{- include "logto.commonContainerSpec" . | nindent 10 }}

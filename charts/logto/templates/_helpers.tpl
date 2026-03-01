@@ -7,9 +7,10 @@ Usage: include "logto.commonContainerSpec" (dict "dbUrl" .dbUrl "context" .)
 {{- define "logto.commonContainerSpec" -}}
 {{- $ctx := .context | default . -}}
 {{- $dbUrl := .dbUrl | default $ctx.Values.dbUrl -}}
+{{- $embeddedTls := .embeddedTls | default $ctx.Values.embeddedTls -}}
 securityContext:
   {{- toYaml $ctx.Values.securityContext | nindent 2 }}
-image: "{{ $ctx.Values.image.registry}}/{{ $ctx.Values.image.repository }}:{{ $ctx.Values.image.tag | default $ctx.Chart.AppVersion }}"
+image: "{{ $ctx.Values.image.registry }}/{{ $ctx.Values.image.repository }}:{{ $ctx.Values.image.tag | default $ctx.Chart.AppVersion }}"
 imagePullPolicy: {{ $ctx.Values.image.pullPolicy }}
 env:
   - name: PORT
@@ -50,16 +51,16 @@ env:
   {{- if $ctx.Values.httpsCertPath }}
   - name: HTTPS_CERT_PATH
     value: {{ $ctx.Values.httpsCertPath | quote }}
-  {{- else if $ctx.Values.embeddedTls.enabled }}
+  {{- else if $embeddedTls.enabled }}
   - name: HTTPS_CERT_PATH
-    value: {{ printf "/etc/logto/tls/%s" $ctx.Values.embeddedTls.secret.certName | quote }}
+    value: {{ printf "/etc/logto/tls/%s" $embeddedTls.secret.certName | quote }}
   {{- end }}
   {{- if $ctx.Values.httpsKeyPath }}
   - name: HTTPS_KEY_PATH
     value: {{ $ctx.Values.httpsKeyPath | quote }}
-  {{- else if $ctx.Values.embeddedTls.enabled }}
+  {{- else if $embeddedTls.enabled }}
   - name: HTTPS_KEY_PATH
-    value: {{ printf "/etc/logto/tls/%s" $ctx.Values.embeddedTls.secret.keyName | quote }}
+    value: {{ printf "/etc/logto/tls/%s" $embeddedTls.secret.keyName | quote }}
   {{- end }}
   {{- if $ctx.Values.trustProxyHeader }}
   - name: TRUST_PROXY_HEADER
@@ -77,12 +78,12 @@ env:
 envFrom:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- if or $ctx.Values.volumeMounts $ctx.Values.embeddedTls.enabled }}
+{{- if or $ctx.Values.volumeMounts $embeddedTls.enabled }}
 volumeMounts:
   {{- with $ctx.Values.volumeMounts }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
-  {{- if $ctx.Values.embeddedTls.enabled }}
+  {{- if $embeddedTls.enabled }}
   - name: embedded-tls
     mountPath: /etc/logto/tls
     readOnly: true

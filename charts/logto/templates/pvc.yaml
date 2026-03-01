@@ -6,6 +6,10 @@ metadata:
   name: {{ .name }}
   labels:
     {{- include "logto.labels" $ | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "0"
+    "helm.sh/resource-policy": keep
 spec:
   accessModes:
     {{- toYaml .accessModes | nindent 4 }}

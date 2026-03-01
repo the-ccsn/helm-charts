@@ -105,7 +105,7 @@ autoAlteration:
 #
 #   # Option 3: Use envFrom (configure above in envFrom section)
 #   dbUrl: {}
-#
+
 dbUrl:
   # valueFrom: 
   #   secretKeyRef:
@@ -113,6 +113,7 @@ dbUrl:
   #     key: "DB_URL"
   # value: "postgresql://user:pass@host:5432/db"
   {}
+
 # The endpoint for Logto core (OIDC issuer identifier, etc.)
 endpoint: ""
 
