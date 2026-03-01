@@ -222,9 +222,11 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
-{{- define "logto.installPreAppJob" }}
-{{- or .Values.autoAlteration.enabled .Values.autoSeeding.enabled .Values.deployOfficialConnectors }}
-{{- end }}
+{{- define "logto.installPreAppJob" -}}
+{{- if or .Values.autoAlteration.enabled .Values.autoSeeding.enabled .Values.deployOfficialConnectors -}}
+true
+{{- end -}}
+{{- end -}}
 {{- define "logto.preAppJobName" }}
 {{- printf "%s-pre-app-job" (include "logto.fullname" .) | trunc 63 | trimSuffix "-" }}
 {{- end }}
