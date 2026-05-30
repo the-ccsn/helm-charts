@@ -4,9 +4,9 @@ kind: Job
 metadata:
   name: {{ include "logto.preAppJobName" . }}
 spec:
+  ttlSecondsAfterFinished: 86000 # Clean up the job after 1 day.
   template:
     spec:
-      ttlSecondsAfterFinished: 86000 # Clean up the job after 1 day.
       restartPolicy: Never # The database alteration job should never be restarted on failure, as it may cause data corruption. Handle retries manually if needed.
       initContainers:
         - name: wait-for-db
