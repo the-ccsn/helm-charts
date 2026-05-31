@@ -53,19 +53,17 @@ embeddedTls:
     keyName: tls.key
 
 ## Extra environment variables for Logto process.
-# envFrom: 
+# envFrom:
 #   - secretRef:
 #       name: my-secret
 #   - configMapRef:
 #       name: my-configmap
 
-deployOfficialConnectors: true
-
 autoSeeding:
   enabled: true
   # Database URL for auto seeding. Use valueFrom or value, if both unset, will use runtime dbUrl.
   # dbUrl:
-  #   valueFrom: 
+  #   valueFrom:
   #     secretKeyRef:
   #       name: "your-secret"
   #       key: "DB_URL"
@@ -74,15 +72,15 @@ autoSeeding:
 autoAlteration:
   enabled: true
   # Database URL for auto alteration. Use valueFrom or value, if both unset, will use runtime dbUrl.
-  # dbUrl: 
-  #   valueFrom: 
+  # dbUrl:
+  #   valueFrom:
   #     secretKeyRef:
   #       name: "your-secret"
   #       key: "DB_URL"
   #   value: "postgresql://user:pass@host:5432/db"
 
 # The Postgres DSN for Logto database.
-# 
+#
 # Configuration options:
 #   1. dbUrl.value: Direct connection string
 #   2. dbUrl.valueFrom: Reference to a secret or configmap key
@@ -109,7 +107,7 @@ autoAlteration:
 #   dbUrl: {}
 
 dbUrl:
-  # valueFrom: 
+  # valueFrom:
   #   secretKeyRef:
   #     name: "your-secret"
   #     key: "DB_URL"
@@ -134,6 +132,21 @@ endpoint: ""
 # caseSensitiveUsername: ""
 # The Key Encryption Key (KEK) used to encrypt Data Encryption Keys (DEK) in the Secret Vault. Must be a base64-encoded string. AES-256 (32 bytes) is recommended.
 # secretVaultKek: ""
+
+## Redis configuration
+# Logto uses Redis as a central cache for well-known data and a pub/sub broker for inter-process communication.
+# Required when running multiple replicas for high availability.
+# Only external Redis is supported — users must provide an existing Redis instance.
+redis:
+  enabled: false
+  # REDIS_URL connection string. Supports value and valueFrom (same pattern as dbUrl).
+  url:
+    # value: "redis://user:pass@host:6379"
+    # valueFrom:
+    #   secretKeyRef:
+    #     name: redis-secret
+    #     key: REDIS_URL
+    {}
 
 ## Console (admin UI) configuration
 console:
@@ -226,17 +239,6 @@ httpRoute:
   #       - name: <release>-core
   #         port: 3001
 
-persistence:
-  # Whether to automatically create the PersistentVolumeClaims exists in the volumes
-  enabled: true
-  storageClass: ""
-  claims:
-  - name: connectors-claim
-    accessModes: [ "ReadWriteOnce" ]
-    resources:
-      requests:
-        storage: 15Mi
-
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
@@ -265,16 +267,37 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Additional volumes on the output Deployment definition.
-volumes:
-- name: connectors
-  persistentVolumeClaim:
-    claimName: connectors-claim
+## High Availability
 
-# Additional volumeMounts on the output Deployment definition.
+# PodDisruptionBudget ensures a minimum number of pods are available during voluntary disruptions.
+pdb:
+  enabled: false
+  minAvailable: 1
+
+# Pod anti-affinity spreads pods across nodes.
+podAntiAffinity:
+  enabled: false
+  type: preferred # preferred | required
+
+# Topology spread constraints for even pod distribution across topology domains.
+topologySpreadConstraints:
+  enabled: false
+  constraints:
+    - maxSkew: 1
+      topologyKey: topology.kubernetes.io/zone
+      whenUnsatisfiable: ScheduleAnyway
+
+# Official connectors are included in the Logto image at /etc/logto/packages/core/connectors.
+# The default volume mounts the connectors directory from the image using an image volume source.
+volumes:
+  - name: connectors
+    image:
+      # reference: ghcr.io/logto-io/logto:latest
+      pullPolicy: ""
 volumeMounts:
-- name: connectors
-  mountPath: /etc/logto/packages/core/connectors
+  - name: connectors
+    mountPath: /etc/logto/packages/core/connectors
+    subPath: /etc/logto/packages/core/connectors
 
 nodeSelector: {}
 

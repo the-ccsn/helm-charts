@@ -29,15 +29,6 @@ spec:
             - '-c'
             - 'npm run alteration deploy latest'
         {{- end }}
-        {{- if .Values.deployOfficialConnectors }}
-        - name: {{ .Chart.Name }}-connector-deploy
-          {{- include "logto.commonContainerSpec" (dict "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
-          command:
-            - /bin/sh
-          args:
-            - '-c'
-            - 'npm run cli connector add -- --official'
-        {{- end }}
       containers:
       - name: pre-app-complete
         image: busybox:latest
@@ -46,9 +37,9 @@ spec:
           - /bin/sh
           - -c
           - 'echo "Pre-app initialization complete."'
-      {{- with .Values.volumes }}
+      {{- if .Values.volumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
+        {{- include "logto.renderVolumes" . | nindent 8 }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

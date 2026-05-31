@@ -31,8 +31,6 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
-        - name: wait-for-db
-          {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
         {{- if include "logto.installPreAppJob" . }}
         - name: wait-for-pre-app-job
           image: bitnami/kubectl:latest
@@ -46,7 +44,6 @@ spec:
               echo "Check status for Job: $JOB_NAME"
               if kubectl get job "$JOB_NAME" > /dev/null 2>&1; then
                   echo "Found active Job $JOB_NAME. Entering wait mode..."
-                  
                   if kubectl wait --for=condition=complete job/"$JOB_NAME" --timeout=600s; then
                       echo "Job completed successfully. Proceeding..."
                   else
@@ -69,11 +66,10 @@ spec:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
+
       {{- if or .Values.volumes .Values.embeddedTls.enabled }}
       volumes:
-        {{- with .Values.volumes }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- include "logto.renderVolumes" . | nindent 8 }}
         {{- if .Values.embeddedTls.enabled }}
         - name: embedded-tls
           secret:
@@ -88,9 +84,31 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- with .Values.affinity }}
+      {{- if .Values.podAntiAffinity.enabled }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+        podAntiAffinity:
+          {{- if eq .Values.podAntiAffinity.type "preferred" }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "logto.selectorLabels" . | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
+          {{- else }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  {{- include "logto.selectorLabels" . | nindent 18 }}
+              topologyKey: kubernetes.io/hostname
+          {{- end }}
+      {{- else if .Values.affinity }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.topologySpreadConstraints.enabled }}
+      topologySpreadConstraints:
+        {{- toYaml .Values.topologySpreadConstraints.constraints | nindent 8 }}
       {{- end }}
       {{- with .Values.tolerations }}
       tolerations:

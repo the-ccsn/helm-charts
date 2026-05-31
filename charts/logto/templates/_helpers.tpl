@@ -74,6 +74,16 @@ env:
   - name: SECRET_VAULT_KEK
     value: {{ $ctx.Values.secretVaultKek | quote }}
   {{- end }}
+  {{- if $ctx.Values.redis.enabled }}
+  {{- if $ctx.Values.redis.url.valueFrom }}
+  - name: REDIS_URL
+    valueFrom:
+      {{- toYaml $ctx.Values.redis.url.valueFrom | nindent 6 }}
+  {{- else if $ctx.Values.redis.url.value }}
+  - name: REDIS_URL
+    value: {{ $ctx.Values.redis.url.value | quote }}
+  {{- end }}
+  {{- end }}
 {{- with $ctx.Values.envFrom }}
 envFrom:
   {{- toYaml . | nindent 2 }}
@@ -132,6 +142,27 @@ command:
       sleep 2
     done
     echo "Database is ready: $DBNAME at $HOST:$PORT"
+{{- end -}}
+{{/*
+Render volumes with image volume source defaults.
+Fills in image.reference and image.pullPolicy for the connectors volume from the main image config.
+Usage: include "logto.renderVolumes" .
+*/}}
+{{- define "logto.renderVolumes" -}}
+{{- $mainImage := printf "%s/%s:%s" .Values.image.registry .Values.image.repository (.Values.image.tag | default .Chart.AppVersion) -}}
+{{- $mainPull := .Values.image.pullPolicy -}}
+{{- range $v := .Values.volumes -}}
+{{- if eq $v.name "connectors" -}}
+{{- $ref := $v.image.reference | default $mainImage -}}
+{{- $pp := $v.image.pullPolicy | default $mainPull -}}
+- name: connectors
+  image:
+    reference: {{ $ref | quote }}
+    pullPolicy: {{ $pp | quote }}
+{{- else -}}
+{{- toYaml $v | nindent 0 -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{/*
 Return the dict of all services (core/admin)
@@ -235,7 +266,7 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 {{- define "logto.installPreAppJob" -}}
-{{- if or .Values.autoAlteration.enabled .Values.autoSeeding.enabled .Values.deployOfficialConnectors -}}
+{{- if or .Values.autoAlteration.enabled .Values.autoSeeding.enabled -}}
 true
 {{- end -}}
 {{- end -}}
