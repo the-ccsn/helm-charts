@@ -13,7 +13,7 @@ spec:
           {{- include "logto.waitForDbContainerSpec" . | nindent 10 }}
         {{- if .Values.autoSeeding.enabled }}
         - name: {{ .Chart.Name }}-seed
-          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoSeeding.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoSeeding.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "volumeMounts" (list) "context" .) | nindent 10 }}
           command:
             - /bin/sh
           args:
@@ -22,7 +22,7 @@ spec:
         {{- end }}
         {{- if .Values.autoAlteration.enabled }}
         - name: {{ .Chart.Name }}-alteration
-          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoAlteration.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "context" .) | nindent 10 }}
+          {{- include "logto.commonContainerSpec" (dict "dbUrl" (.Values.autoAlteration.dbUrl | default nil) "embeddedTls" (dict "enabled" false) "volumeMounts" (list) "context" .) | nindent 10 }}
           command:
             - /bin/sh
           args:
@@ -37,10 +37,7 @@ spec:
           - /bin/sh
           - -c
           - 'echo "Pre-app initialization complete."'
-      {{- if .Values.volumes }}
-      volumes:
-        {{- include "logto.renderVolumes" . | nindent 8 }}
-      {{- end }}
+
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

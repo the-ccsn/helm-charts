@@ -8,6 +8,10 @@ Usage: include "logto.commonContainerSpec" (dict "dbUrl" .dbUrl "context" .)
 {{- $ctx := .context | default . -}}
 {{- $dbUrl := .dbUrl | default $ctx.Values.dbUrl -}}
 {{- $embeddedTls := .embeddedTls | default $ctx.Values.embeddedTls -}}
+{{- $volumeMounts := $ctx.Values.volumeMounts -}}
+{{- if hasKey . "volumeMounts" -}}
+  {{- $volumeMounts = .volumeMounts -}}
+{{- end -}}
 securityContext:
   {{- toYaml $ctx.Values.securityContext | nindent 2 }}
 image: "{{ $ctx.Values.image.registry }}/{{ $ctx.Values.image.repository }}:{{ $ctx.Values.image.tag | default $ctx.Chart.AppVersion }}"
@@ -88,9 +92,9 @@ env:
 envFrom:
   {{- toYaml . | nindent 2 }}
 {{- end }}
-{{- if or $ctx.Values.volumeMounts $embeddedTls.enabled }}
+{{- if or $volumeMounts $embeddedTls.enabled }}
 volumeMounts:
-  {{- with $ctx.Values.volumeMounts }}
+  {{- with $volumeMounts }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
   {{- if $embeddedTls.enabled }}

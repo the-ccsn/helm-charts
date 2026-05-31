@@ -297,7 +297,7 @@ volumes:
 volumeMounts:
   - name: connectors
     mountPath: /etc/logto/packages/core/connectors
-    subPath: /etc/logto/packages/core/connectors
+    subPath: etc/logto/packages/core/connectors
 
 nodeSelector: {}
 
