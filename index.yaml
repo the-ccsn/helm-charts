@@ -3,6 +3,17 @@ entries:
   logto:
   - apiVersion: v2
     appVersion: 1.40.1
+    created: "2026-05-31T10:08:54.191977653Z"
+    description: Logto, the better identity infrastructure for developers
+    digest: 182c5166b2eac46fc352a7cfd5c25e98d0ceee45dec3e73efa85d5edf39b9502
+    icon: https://avatars.githubusercontent.com/u/84981374
+    name: logto
+    type: application
+    urls:
+    - https://github.com/the-ccsn/helm-charts/releases/download/logto-0.3.1/logto-0.3.1.tgz
+    version: 0.3.1
+  - apiVersion: v2
+    appVersion: 1.40.1
     created: "2026-05-31T07:46:45.271061678Z"
     description: Logto, the better identity infrastructure for developers
     digest: 97a7a23d665b06a30c56548ec02dca76beb564002d8eb0959a74dcff33f116f1
@@ -247,4 +258,4 @@ entries:
     urls:
     - https://github.com/the-ccsn/helm-charts/releases/download/logto-0.1.0/logto-0.1.0.tgz
     version: 0.1.0
-generated: "2026-05-31T07:46:45.271224901Z"
+generated: "2026-05-31T10:08:54.192096079Z"
